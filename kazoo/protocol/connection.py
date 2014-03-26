@@ -4,6 +4,7 @@ import os
 import random
 import select
 import socket
+import ssl
 import sys
 import time
 from binascii import hexlify
@@ -216,11 +217,12 @@ class ConnectionHandler(object):
         remaining = length
         with self._socket_error_handling():
             while remaining > 0:
-                s = self.handler.select([self._socket], [], [], timeout)[0]
-                if not s:  # pragma: nocover
-                    # If the read list is empty, we got a timeout. We don't
-                    # have to check wlist and xlist as we don't set any
-                    raise self.handler.timeout_exception("socket time-out")
+                if self._socket.pending() == 0:
+                    s = self.handler.select([self._socket], [], [], timeout)[0]
+                    if not s:  # pragma: nocover
+                        # If the read list is empty, we got a timeout. We don't
+                        # have to check wlist and xlist as we don't set any
+                        raise self.handler.timeout_exception("socket time-out")
 
                 chunk = self._socket.recv(remaining)
                 if chunk == b'':
@@ -576,6 +578,7 @@ class ConnectionHandler(object):
         with self._socket_error_handling():
             self._socket = self.handler.create_connection(
                 (host, port), client._session_timeout / 1000.0)
+            self._socket = ssl.wrap_socket(self._socket)
 
         self._socket.setblocking(0)
 
