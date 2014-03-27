@@ -224,7 +224,13 @@ class ConnectionHandler(object):
                         # have to check wlist and xlist as we don't set any
                         raise self.handler.timeout_exception("socket time-out")
 
-                chunk = self._socket.recv(remaining)
+                try:
+                    chunk = self._socket.recv(remaining)
+                except ssl.SSLException as error:
+                    if error.errno != ssl.SSL_ERROR_WANT_READ:
+                        raise
+                    continue
+
                 if chunk == b'':
                     raise ConnectionDropped('socket connection broken')
                 msgparts.append(chunk)
