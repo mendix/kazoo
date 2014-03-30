@@ -80,11 +80,12 @@ class KazooTestHarness(unittest.TestCase):
         return ",".join([s.address for s in self.cluster])
 
     def _get_nonchroot_client(self):
-        return KazooClient(self.servers)
+        return KazooClient(self.servers, ssl_options={})
 
     def _get_client(self, **kwargs):
         kwargs['retry_max_delay'] = 2
         kwargs['max_retries'] = 35
+        kwargs['ssl_options'] = {}
         c = KazooClient(self.hosts, **kwargs)
         try:
             self._clients.append(c)

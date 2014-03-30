@@ -157,4 +157,4 @@ class TestGeventClient(test_client.TestClient):
 
     def _get_client(self, **kwargs):
         kwargs["handler"] = self._makeOne()
-        return KazooClient(self.hosts, **kwargs)
+        return KazooClient(self.hosts, ssl_options={}, **kwargs)

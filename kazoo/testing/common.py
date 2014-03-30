@@ -59,7 +59,9 @@ def to_java_compatible_path(path):
     return path
 
 ServerInfo = namedtuple(
-    "ServerInfo", "server_id client_port election_port leader_port")
+    "ServerInfo",
+    "server_id client_port client_ssl_port election_port leader_port"
+)
 
 
 class ManagedZooKeeper(object):
@@ -141,6 +143,20 @@ log4j.appender.ROLLINGFILE.Threshold=DEBUG
 log4j.appender.ROLLINGFILE.File=""" + to_java_compatible_path(
                 self.working_path + os.sep + "zookeeper.log\n"))
 
+        with open(os.devnull, 'w') as devnull:
+            self.stunnel_process = subprocess.Popen(
+                args=[
+                    "stunnel",
+                    "-d", str(self.client_ssl_port),
+                    "-r", str(self.client_port),
+                    "-p", "/home/jouke/dev/kazoo/keycert.pem",
+                    "-P", "/home/jouke/dev/kazoo/%d.pid" % self.client_ssl_port,
+                    "-o", "/home/jouke/dev/kazoo/%d.log" % self.client_ssl_port,
+                    "-f",
+                ],
+                stderr=devnull,
+                stdout=devnull,
+            )
         self.process = subprocess.Popen(
             args=["java",
                   "-cp", self.classpath,
@@ -192,7 +208,7 @@ log4j.appender.ROLLINGFILE.File=""" + to_java_compatible_path(
     @property
     def address(self):
         """Get the address of the ZooKeeper instance."""
-        return "%s:%s" % (self.host, self.client_port)
+        return "%s:%s" % (self.host, self.client_ssl_port)
 
     @property
     def running(self):
@@ -201,6 +217,10 @@ log4j.appender.ROLLINGFILE.File=""" + to_java_compatible_path(
     @property
     def client_port(self):
         return self.server_info.client_port
+
+    @property
+    def client_ssl_port(self):
+        return self.server_info.client_ssl_port
 
     def reset(self):
         """Stop the zookeeper instance, cleaning out its on disk-data."""
@@ -215,7 +235,9 @@ log4j.appender.ROLLINGFILE.File=""" + to_java_compatible_path(
         if not self.running:
             return
         self.process.terminate()
+        self.stunnel_process.terminate()
         self.process.wait()
+        self.stunnel_process.wait()
         self._running = False
 
     def destroy(self):
@@ -239,7 +261,7 @@ class ZookeeperCluster(object):
         peers = []
 
         for i in range(size):
-            info = ServerInfo(i + 1, port, port + 1, port + 2)
+            info = ServerInfo(i + 1, port, port + 1, port + 2, port + 3)
             peers.append(info)
             port += 10
 

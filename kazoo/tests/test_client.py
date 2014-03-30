@@ -65,7 +65,7 @@ class TestClientConstructor(unittest.TestCase):
 
     def _makeOne(self, *args, **kw):
         from kazoo.client import KazooClient
-        return KazooClient(*args, **kw)
+        return KazooClient(*args, ssl_options={}, **kw)
 
     def test_invalid_handler(self):
         from kazoo.handlers.threading import SequentialThreadingHandler
@@ -556,7 +556,7 @@ class TestClient(KazooTestCase):
         from kazoo.security import make_digest_acl_credential, CREATOR_ALL_ACL
         credential = make_digest_acl_credential("username", "password")
         alt_client = KazooClient(self.cluster[0].address + self.client.chroot,
-            max_retries=5, auth_data=[("digest", credential)])
+            max_retries=5, auth_data=[("digest", credential)], ssl_options={})
         alt_client.start()
         alt_client.create("/1/2", b"val2", makepath=True, acl=CREATOR_ALL_ACL)
 
@@ -852,7 +852,7 @@ class TestClient(KazooTestCase):
         from kazoo.protocol.states import KeeperState
         hosts = self.cluster[0].address
         # create a client with only one server in its list
-        client = KazooClient(hosts=hosts)
+        client = KazooClient(hosts=hosts, ssl_options={})
         client.start()
 
         # try to change the chroot, not currently allowed
