@@ -4,7 +4,6 @@ import os
 import random
 import select
 import socket
-import ssl
 import sys
 import time
 from binascii import hexlify
@@ -87,11 +86,14 @@ class RWPinger(object):
     the iterator will yield False if called too soon.
 
     """
-    def __init__(self, hosts, connection_func, socket_handling):
+    def __init__(self, hosts, connection_func, socket_handling, ssl_options,
+                 ssl):
         self.hosts = hosts
         self.connection = connection_func
         self.last_attempt = None
         self.socket_handling = socket_handling
+        self.ssl_options = ssl_options
+        self.ssl = ssl
 
     def __iter__(self):
         if not self.last_attempt:
@@ -111,6 +113,10 @@ class RWPinger(object):
             try:
                 with self.socket_handling():
                     sock = self.connection((host, port))
+                    if self.ssl_options is not None:
+                        sock = self.ssl.wrap_socket(
+                            sock, **self.ssl_options
+                        )
                     sock.sendall(b"isro")
                     result = sock.recv(8192)
                     sock.close()
@@ -203,7 +209,8 @@ class ConnectionHandler(object):
         """Returns a server pinger iterable, that will ping the next
         server in the list, and apply a back-off between attempts."""
         return RWPinger(self.client.hosts, self.handler.create_connection,
-                        self._socket_error_handling)
+                        self._socket_error_handling, self.client.ssl_options,
+                        self.client.handler.ssl)
 
     def _read_header(self, timeout):
         b = self._read(4, timeout)
@@ -215,6 +222,7 @@ class ConnectionHandler(object):
     def _read(self, length, timeout):
         msgparts = []
         remaining = length
+        ssl = self.client.handler.ssl
         with self._socket_error_handling():
             while remaining > 0:
                 if (
@@ -590,7 +598,7 @@ class ConnectionHandler(object):
                 (host, port), client._session_timeout / 1000.0)
             if client.ssl_options is not None:
                 self.logger.log(BLATHER, 'Setting up ssl connection')
-                self._socket = ssl.wrap_socket(
+                self._socket = client.handler.ssl.wrap_socket(
                     self._socket, **client.ssl_options
                 )
 

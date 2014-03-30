@@ -18,6 +18,7 @@ import select
 import socket
 import threading
 import time
+import ssl
 
 try:
     import Queue
@@ -181,6 +182,7 @@ class SequentialThreadingHandler(object):
         """Create a :class:`SequentialThreadingHandler` instance"""
         self.callback_queue = self.queue_impl()
         self.completion_queue = self.queue_impl()
+        self.ssl = ssl
         self._running = False
         self._state_change = threading.Lock()
         self._workers = []

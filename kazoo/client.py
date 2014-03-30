@@ -628,6 +628,10 @@ class KazooClient(object):
         peer = self._connection._socket.getpeername()
         sock = self.handler.create_connection(
             peer, timeout=self._session_timeout / 1000.0)
+        if self.ssl_options is not None:
+            sock = self.handler.ssl.wrap_socket(
+                sock, **self.ssl_options
+            )
         sock.sendall(cmd)
         result = sock.recv(8192)
         sock.close()

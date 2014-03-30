@@ -13,7 +13,7 @@ import gevent.thread
 
 from gevent.queue import Empty
 from gevent.queue import Queue
-from gevent import socket
+from gevent import socket, ssl
 
 from kazoo.handlers.utils import create_tcp_socket, create_tcp_connection
 
@@ -52,6 +52,7 @@ class SequentialGeventHandler(object):
     def __init__(self):
         """Create a :class:`SequentialGeventHandler` instance"""
         self.callback_queue = Queue()
+        self.ssl = ssl
         self._running = False
         self._async = None
         self._state_change = gevent.coros.Semaphore()
