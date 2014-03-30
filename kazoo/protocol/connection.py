@@ -230,7 +230,7 @@ class ConnectionHandler(object):
 
                 try:
                     chunk = self._socket.recv(remaining)
-                except ssl.SSLException as error:
+                except ssl.SSLError as error:
                     if error.errno != ssl.SSL_ERROR_WANT_READ:
                         raise
                     continue
