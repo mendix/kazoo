@@ -217,7 +217,11 @@ class ConnectionHandler(object):
         remaining = length
         with self._socket_error_handling():
             while remaining > 0:
-                if self._socket.pending() == 0:
+                if (
+                    not hasattr(self._socket, 'pending')
+                    or
+                    self._socket.pending() == 0
+                ):
                     s = self.handler.select([self._socket], [], [], timeout)[0]
                     if not s:  # pragma: nocover
                         # If the read list is empty, we got a timeout. We don't
@@ -584,7 +588,11 @@ class ConnectionHandler(object):
         with self._socket_error_handling():
             self._socket = self.handler.create_connection(
                 (host, port), client._session_timeout / 1000.0)
-            self._socket = ssl.wrap_socket(self._socket)
+            if client.ssl_options is not None:
+                self.logger.log(BLATHER, 'Setting up ssl connection')
+                self._socket = ssl.wrap_socket(
+                    self._socket, **client.ssl_options
+                )
 
         self._socket.setblocking(0)
 

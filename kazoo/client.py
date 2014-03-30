@@ -104,7 +104,8 @@ class KazooClient(object):
                  timeout=10.0, client_id=None, handler=None,
                  default_acl=None, auth_data=None, read_only=None,
                  randomize_hosts=True, connection_retry=None,
-                 command_retry=None, logger=None, **kwargs):
+                 command_retry=None, logger=None, ssl_options=None,
+                 **kwargs):
         """Create a :class:`KazooClient` instance. All time arguments
         are in seconds.
 
@@ -133,6 +134,9 @@ class KazooClient(object):
             options which will be used for creating one.
         :param logger: A custom logger to use instead of the module
             global `log` instance.
+        :param ssl_options: If not None, an ssl socket will be used
+            instead of a normal tcp socket. These options will be used
+            as the kwargs of the ssl.wrap_socket function.
 
         Basic Example:
 
@@ -179,6 +183,7 @@ class KazooClient(object):
         self.randomize_hosts = randomize_hosts
         self.hosts = None
         self.chroot = None
+        self.ssl_options = ssl_options
         self.set_hosts(hosts)
 
         # Curator like simplified state tracking, and listeners for
